@@ -9,6 +9,7 @@ from datetime import datetime
 from utils.cloner import clone_repo
 from scanners.code_analysis import run_bandit_scan, extract_metrics
 from scanners.advanced_analysis import run_semgrep_scan, extract_semgrep_metrics
+from scanners.fuzz_analysis import run_fuzz_scan, extract_fuzz_metrics
 from scanners.ai_suggester import generate_suggestions
 
 st.set_page_config(page_title="OpenLake Security", page_icon="🌊", layout="wide")
@@ -38,9 +39,19 @@ if st.button("🚀 Run Security Scan"):
             bandit_data = run_bandit_scan(scan_dir) 
             semgrep_data = run_semgrep_scan(scan_dir)
             
+            # 🚀 New! Sandbox Fuzzing!
+            # For demonstration, we fuzz our target_app if the repo doesn't have a Dockerfile
+            # In a real tool, we'd look for a Dockerfile in the scan_dir
+            if os.path.exists(os.path.join(scan_dir, "Dockerfile")):
+                fuzz_data = run_fuzz_scan(scan_dir)
+            else:
+                st.warning("⚠️ No Dockerfile found in repo. Running default sandbox fuzzer demo.")
+                fuzz_data = run_fuzz_scan("target_app")
+
             b_metrics = extract_metrics(bandit_data)
             s_metrics = extract_semgrep_metrics(semgrep_data)
-            suggestions = generate_suggestions(bandit_data, semgrep_data)
+            f_metrics = extract_fuzz_metrics(fuzz_data)
+            suggestions = generate_suggestions(bandit_data, semgrep_data, fuzz_data)
             
             # Dumping to Data Lake
             os.makedirs("data_lake", exist_ok=True)
@@ -53,10 +64,15 @@ if st.button("🚀 Run Security Scan"):
                 "source": repo_url,
                 "metrics": {
                     "basic_issues": b_metrics["total_issues"],
-                    "advanced_issues": s_metrics["total_advanced_issues"]
+                    "advanced_issues": s_metrics["total_advanced_issues"],
+                    "fuzz_crashes": f_metrics["fuzz_crashes"]
                 },
                 "remediation_plan": suggestions,
-                "raw_scans": {"bandit": bandit_data, "semgrep": semgrep_data}
+                "raw_scans": {
+                    "bandit": bandit_data, 
+                    "semgrep": semgrep_data,
+                    "fuzzing": fuzz_data
+                }
             }
             
             with open(filename, "w") as f:
@@ -85,15 +101,17 @@ st.header(f"📦 Project: `{data.get('project', 'Unknown')}`")
 st.caption(f"Source: {data.get('source', 'Unknown')} | Scanned on: {data.get('scan_date', 'Unknown')}")
 
 st.subheader("📊 Vulnerability Metrics")
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 metrics = data.get("metrics", {})
 b_issues = metrics.get("basic_issues", 0)
 a_issues = metrics.get("advanced_issues", 0)
+f_crashes = metrics.get("fuzz_crashes", 0)
 
-col1.metric(label="Total Issues Discovered", value=b_issues + a_issues)
+col1.metric(label="Total Issues Discovered", value=b_issues + a_issues + f_crashes)
 col2.metric(label="Basic Flaws (SAST)", value=b_issues)
 col3.metric(label="Complex Flaws (Advanced)", value=a_issues)
+col4.metric(label="Dynamic Crashes (Fuzz)", value=f_crashes, delta=f_crashes, delta_color="inverse")
 
 st.divider()
 
@@ -102,7 +120,8 @@ suggestions = data.get("remediation_plan", [])
 
 if suggestions:
     df = pd.DataFrame(suggestions)
-    # Replaced deprecated parameter with width="stretch"
+    # 🚀 Fix for the Arrow/Pandas error: convert line numbers to strings
+    df['line'] = df['line'].astype(str).replace('0', 'N/A')
     st.dataframe(df, width="stretch")
 else:
     st.success("✅ No critical issues requiring immediate remediation were found.")
