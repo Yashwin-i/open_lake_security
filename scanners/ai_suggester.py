@@ -25,13 +25,23 @@ def generate_suggestions(bandit_data, semgrep_data, fuzz_data=None):
             })
             
     # 3. Pull Dynamic Issues (Fuzzing)
-    if fuzz_data and fuzz_data.get("crashes", 0) > 0:
-        suggestions.append({
-            "file": "Dynamic Target (Sandbox)",
-            "line": 0, # Use 0 instead of N/A to keep types consistent
-            "severity": "CRITICAL",
-            "issue": f"[FUZZ] {fuzz_data.get('status')}: Massive Payload Attack",
-            "action": "The sandbox failed to handle a massive 500-byte buffer overflow payload. The application process was terminated by the OS (SIGSEGV/Crash). Immediate fix: Implement strict input length validation."
-        })
+    if fuzz_data:
+        if fuzz_data.get("crashes", 0) > 0:
+            suggestions.append({
+                "file": "Dynamic Target (Sandbox)",
+                "line": 0,
+                "severity": "CRITICAL",
+                "issue": f"[FUZZ] {fuzz_data.get('status')}: Massive Payload Attack",
+                "action": "The sandbox failed to handle a massive 2000-byte buffer overflow payload. The application process was terminated by the OS (SIGSEGV/Crash). Immediate fix: Implement strict input length validation."
+            })
+        
+        if fuzz_data.get("sql_injection_detected", False):
+            suggestions.append({
+                "file": "Dynamic Target (Sandbox)",
+                "line": 0,
+                "severity": "CRITICAL",
+                "issue": f"[FUZZ] SQL Injection Detected",
+                "action": "The sandbox identified a SQL injection vulnerability at `/api/user`. Attacker was able to leak database contents using `' OR '1'='1`. Immediate fix: Use parameterized queries (prepared statements) and NEVER use f-strings to build SQL queries."
+            })
 
     return suggestions
