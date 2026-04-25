@@ -2,3 +2,6 @@ temp_scan_zone/
 data_lake/
 __pycache__/
 .DS_Store
+venv
+chroma_db/
+

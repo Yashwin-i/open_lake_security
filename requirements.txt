@@ -7,3 +7,8 @@ boofuzz
 docker
 streamlit
 pandas
+llama-cpp-python
+chromadb
+beautifulsoup4
+sentence-transformers
+huggingface_hub
