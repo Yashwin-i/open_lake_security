@@ -11,9 +11,9 @@ import os
 COLLECTION_NAME = "cybersec_kb"
 DB_PATH = "./chroma_db"
 
-# Using Mistral 7B Instruct (Q4_K_M for balanced performance/memory)
-MODEL_REPO = "TheBloke/Mistral-7B-Instruct-v0.2-GGUF"
-MODEL_FILE = "mistral-7b-instruct-v0.2.Q4_K_M.gguf"
+# Using Llama-3.2-1B-Instruct (Extremely fast on CPU, small footprint)
+MODEL_REPO = "bartowski/Llama-3.2-1B-Instruct-GGUF"
+MODEL_FILE = "Llama-3.2-1B-Instruct-Q4_K_M.gguf"
 
 # Free cybersecurity knowledge sources (lightweight text pages)
 SOURCES = [
@@ -148,23 +148,23 @@ def load_local_llm():
     model_path = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILE)
     return Llama(
         model_path=model_path,
-        n_ctx=4096,       # Context window
+        n_ctx=2048,       # Optimized context window for CPU speed
         n_threads=8,      # Utilize local CPU cores
         verbose=False     # Keep logs clean
     )
 
 def ask_ai(question, context_chunks):
-    """Send question + context to the local Mistral model via llama_cpp."""
+    """Send question + context to the local Llama model via llama_cpp."""
     llm = load_local_llm()
     context = "\n\n---\n\n".join(context_chunks)
     
-    # Format for Mistral Instruct
-    prompt = f"[INST] You are a cybersecurity assistant. Use the context below to answer.\nContext:\n{context}\n\nQuestion: {question} [/INST]"
+    # Format for Llama-3.2-Instruct
+    prompt = f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are a cybersecurity assistant. Use the following context to answer the user's question.\n\nContext:\n{context}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{question}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
     
     response = llm(
         prompt,
         max_tokens=512,
-        stop=["</s>"],
+        stop=["<|eot_id|>"],
         stream=True
     )
     return response
