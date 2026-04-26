@@ -39,4 +39,4 @@ To integrate a new tool:
 1. Create a new module inside the `scanners/` directory (e.g., `my_new_scanner.py`).
 2. Add a `run_scan(target_dir)` function to execute your tool.
 3. Parse the results and return them in a standardized dictionary format.
-4. Integrate the new function call inside `dashboard.py` during the target scan lifecycle.
+4. Integrate the new function call inside the `/api/scan` endpoint in `app.py` during the target scan lifecycle.

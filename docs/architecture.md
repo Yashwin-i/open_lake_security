@@ -4,9 +4,9 @@ OpenLake Security aims to orchestrate automated threat detection by integrating 
 
 ## Core Components
 
-1. **Streamlit UI (`dashboard.py`)**
-   - The primary interface. Built with Streamlit to enable a reactive and interactive experience. 
-   - Manages state, visualizes data lake JSONs, provides scanning endpoints, and features an integrated AI chat interface.
+1. **FastAPI Backend & UI (`app.py` & `static/`)**
+   - The primary interface. Built with FastAPI to serve a modern HTML/JS frontend (`static/index.html` and `static/app.js`) to enable a reactive and interactive experience. 
+   - Manages state, visualizes data lake JSONs, provides scanning REST API endpoints, and features an integrated AI chat interface.
 
 2. **Repository Cloner (`utils/cloner.py`)**
    - Handles securely cloning Git repositories from GitHub or other sources into a temporary workspace (`temp_scan_zone/`) where static and dynamic analysis runs.

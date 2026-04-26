@@ -58,25 +58,26 @@ The application expects a `temp_scan_zone` directory for temporary files. This i
 
 ## Running the Application
 
-1. Start the Streamlit dashboard:
+1. Start the FastAPI server:
    ```bash
-   streamlit run dashboard.py
+   python run.py
    ```
    If running on a Nix-based system with `nix-ld`, you may need to export `LD_LIBRARY_PATH` before running the command:
    ```bash
-   LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH streamlit run dashboard.py
+   LD_LIBRARY_PATH=$NIX_LD_LIBRARY_PATH python run.py
    ```
 
-2. Open your web browser and navigate to the URL provided by Streamlit.
+2. Open your web browser and navigate to the URL provided by Uvicorn (usually `http://127.0.0.1:8000`).
 
-3. Use the Sidebar Navigation to choose between the "Security Dashboard" and "AI Assistant".
+3. Use the Sidebar Navigation to choose between the "Workspace" views (e.g., Home, Findings, Attack Simulation, Threat Map, Data Lake) and "AI Assistant".
 
 ### Using the Security Dashboard
-- Enter a GitHub Repository URL in the input field.
-- Click the "Run Security Scan" button.
+- Enter a GitHub Repository URL in the input field on the Home page.
+- Click the "Run Scan" button.
 - Wait for the pipeline to finish cloning, scanning, and analyzing.
+- Explore the Findings, Attack Simulation, and Threat Map sections for detailed insights.
 
 ### Using the AI Assistant
 - Navigate to the AI Assistant page using the sidebar.
-- Click "Build / Rebuild Knowledge Base" to scrape HackTricks and OWASP content into the local ChromaDB database.
+- Click "Build / Rebuild Knowledge Base" under Knowledge Base Settings to scrape HackTricks and OWASP content into the local ChromaDB database.
 - Chat with the AI regarding vulnerabilities, remediation, and other cybersecurity topics.

@@ -16,9 +16,9 @@ By downloading and running a model locally, we achieve:
 
 ## Setting Up the Knowledge Base
 
-1. Navigate to the **AI Assistant** tab in the Streamlit Sidebar.
-2. Under the **Knowledge Base Settings** expander, click **Build / Rebuild Knowledge Base**.
-3. The dashboard will automatically fetch cybersecurity references, parse out unnecessary HTML/scripts, split the text, and store it in your `chroma_db/` folder.
+1. Navigate to the **AI Assistant** tab in the Sidebar.
+2. Under the **Knowledge Base Settings**, click **Build / Rebuild Knowledge Base**.
+3. The server will automatically fetch cybersecurity references, parse out unnecessary HTML/scripts, split the text, and store it in your `chroma_db/` folder.
 
 ## Interacting with the AI
 
@@ -26,4 +26,4 @@ Once the Knowledge Base is populated:
 1. Use the chat input box at the bottom of the page.
 2. Ask any question regarding vulnerabilities, payload types, remediation steps, or general security concepts.
 3. The RAG pipeline will query ChromaDB for the most relevant context and supply it to the local LLM.
-4. The local model will stream the answer directly back to the dashboard UI.
+4. The local model will stream the answer directly back to the web UI.

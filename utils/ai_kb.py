@@ -4,7 +4,6 @@ AI Knowledge Base utility for OpenLake Security.
 This module provides functionality to fetch, process, and query cybersecurity
 knowledge from various web sources using local language models and ChromaDB.
 """
-import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import chromadb
@@ -139,7 +138,7 @@ def is_db_populated():
     except:
         return False
 
-def build_knowledge_base(progress_bar, status_text):
+def build_knowledge_base(progress_bar=None, status_text=None):
     """
     Scrape sources and store them in ChromaDB.
 
@@ -155,8 +154,10 @@ def build_knowledge_base(progress_bar, status_text):
     doc_id = 0
 
     for i, url in enumerate(SOURCES):
-        status_text.text(f"Fetching: {url.split('/')[-1]}...")
-        progress_bar.progress((i + 1) / total)
+        if status_text and hasattr(status_text, "text"):
+            status_text.text(f"Fetching: {url.split('/')[-1]}...")
+        if progress_bar and hasattr(progress_bar, "progress"):
+            progress_bar.progress((i + 1) / total)
 
         text = fetch_page(url)
         if not text or len(text) < 200:
@@ -193,7 +194,8 @@ def query_knowledge_base(question, n_results=5):
     results = col.query(query_texts=[question], n_results=n_results)
     return results["documents"][0] if results["documents"] else []
 
-@st.cache_resource
+_llm_instance = None
+
 def load_local_llm():
     """
     Loads the model locally exactly once per application lifecycle.
@@ -201,14 +203,17 @@ def load_local_llm():
     Returns:
         Llama: An initialized instance of the local LLM.
     """
-    print(f"Downloading/Loading {MODEL_FILE}...")
-    model_path = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILE)
-    return Llama(
-        model_path=model_path,
-        n_ctx=2048,       # Optimized context window for CPU speed
-        n_threads=8,      # Utilize local CPU cores
-        verbose=False     # Keep logs clean
-    )
+    global _llm_instance
+    if _llm_instance is None:
+        print(f"Downloading/Loading {MODEL_FILE}...")
+        model_path = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILE)
+        _llm_instance = Llama(
+            model_path=model_path,
+            n_ctx=2048,       # Optimized context window for CPU speed
+            n_threads=8,      # Utilize local CPU cores
+            verbose=False     # Keep logs clean
+        )
+    return _llm_instance
 
 def ask_ai(question, context_chunks):
     """
