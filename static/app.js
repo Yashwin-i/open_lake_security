@@ -31,13 +31,14 @@ function startClock() {
 }
 
 // ---- Navigation ----
-const panels = ['home','findings','attacks','threatmap','datalake'];
+const panels = ['home','findings','attacks','threatmap','datalake','ai'];
 const panelTitles = {
   home:      'Home',
   findings:  'Findings',
   attacks:   'Attack Simulation',
   threatmap: 'Threat Map',
   datalake:  'Data Lake',
+  ai:        'AI Assistant',
 };
 
 function navigate(id) {
@@ -493,3 +494,102 @@ function showAlert(msg, type) {
   document.querySelector('.scan-hero').prepend(div);
   setTimeout(() => div.remove(), 5000);
 }
+
+// ============================================================
+// AI Assistant Logic
+// ============================================================
+
+async function checkKBStatus() {
+  try {
+    const res = await fetch('/api/ai/status');
+    const data = await res.json();
+    const statusEl = document.getElementById('kb-status');
+    if (data.db_populated) {
+      statusEl.innerHTML = `<span style="color: #4ade80;">✅ Ready — ${data.chunks} chunks loaded</span>`;
+    } else {
+      statusEl.innerHTML = `<span style="color: #fbbf24;">⚠️ Knowledge base is empty. Please build it first.</span>`;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function buildKB() {
+  const btn = document.getElementById('btn-build-kb');
+  const statusEl = document.getElementById('kb-status');
+  btn.disabled = true;
+  btn.textContent = "Building... (this might take a while)";
+  statusEl.textContent = "Fetching and embedding sources...";
+  
+  try {
+    await fetch('/api/ai/build', {method: 'POST'});
+    await checkKBStatus();
+  } catch (e) {
+    statusEl.textContent = `Error: ${e.message}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Build / Rebuild Knowledge Base";
+  }
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  
+  input.value = '';
+  const history = document.getElementById('chat-history');
+  
+  const userDiv = document.createElement('div');
+  userDiv.style.alignSelf = 'flex-end';
+  userDiv.style.background = '#2563eb';
+  userDiv.style.color = '#fff';
+  userDiv.style.padding = '10px 14px';
+  userDiv.style.borderRadius = '14px 14px 0 14px';
+  userDiv.style.maxWidth = '80%';
+  userDiv.textContent = msg;
+  history.appendChild(userDiv);
+  history.scrollTop = history.scrollHeight;
+  
+  const aiDiv = document.createElement('div');
+  aiDiv.style.alignSelf = 'flex-start';
+  aiDiv.style.background = '#1e293b';
+  aiDiv.style.color = '#fff';
+  aiDiv.style.padding = '10px 14px';
+  aiDiv.style.borderRadius = '14px 14px 14px 0';
+  aiDiv.style.maxWidth = '80%';
+  aiDiv.style.lineHeight = '1.5';
+  aiDiv.textContent = 'Thinking...';
+  history.appendChild(aiDiv);
+  history.scrollTop = history.scrollHeight;
+  
+  try {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg})
+    });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      aiDiv.textContent = `Error: ${err.detail || res.statusText}`;
+      return;
+    }
+    
+    aiDiv.textContent = '';
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, {stream: true});
+      aiDiv.textContent += chunk;
+      history.scrollTop = history.scrollHeight;
+    }
+  } catch (e) {
+    aiDiv.textContent = `Error: ${e.message}`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', checkKBStatus);

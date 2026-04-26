@@ -4,7 +4,7 @@ import glob
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 # Importing backend engines (unchanged)
@@ -14,6 +14,10 @@ from scanners.advanced_analysis import run_semgrep_scan, extract_semgrep_metrics
 from scanners.fuzz_analysis import run_fuzz_scan, extract_fuzz_metrics
 from scanners.ai_suggester import generate_suggestions
 from scanners.threat_mapper import generate_threat_model
+from utils.ai_kb import (
+    is_db_populated, get_chroma_collection, build_knowledge_base,
+    query_knowledge_base, ask_ai
+)
 
 app = FastAPI(title="OpenLake Security API")
 
@@ -188,3 +192,34 @@ def get_scan(filename: str):
         raise HTTPException(status_code=404, detail="Scan not found.")
     with open(path, "r") as f:
         return JSONResponse(content=json.load(f))
+
+# ==========================================
+# AI CHATBOT ENDPOINTS
+# ==========================================
+@app.get("/api/ai/status")
+def ai_status():
+    populated = is_db_populated()
+    chunks = get_chroma_collection().count() if populated else 0
+    return {"db_populated": populated, "chunks": chunks}
+
+@app.post("/api/ai/build")
+def build_kb():
+    build_knowledge_base()
+    return {"status": "ok"}
+
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/api/ai/chat")
+def chat(body: ChatRequest):
+    if not is_db_populated():
+        raise HTTPException(status_code=400, detail="Knowledge base not built")
+    context = query_knowledge_base(body.message)
+    stream = ask_ai(body.message, context)
+    
+    def generate():
+        for chunk in stream:
+            yield chunk["choices"][0]["text"]
+            
+    return StreamingResponse(generate(), media_type="text/plain")
+

@@ -46,6 +46,11 @@
       <span>Data Lake</span>
     </div>
 
+    <div class="nav-item" data-panel="ai" onclick="navigate('ai')">
+      <div class="nav-icon">🛡️</div>
+      <span>AI Assistant</span>
+    </div>
+
     <div class="sidebar-footer">
       OpenLake Security<br/>
       v1.0 · <span id="sf-date"></span>
@@ -421,6 +426,29 @@
               <span>Select a scan on the left to view its JSON export.</span>
             </div>
             <div class="json-viewer" id="json-viewer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================
+           PANEL 6 — AI ASSISTANT
+           ====================================== -->
+      <div class="panel" id="panel-ai">
+        <div class="page-title">CyberSec AI Assistant</div>
+        <div class="page-subtitle">Powered by Local GGUF + Cybersecurity Knowledge Base.</div>
+        
+        <div class="card" id="kb-settings" style="margin-bottom: 20px;">
+          <h3>Knowledge Base Settings</h3>
+          <p id="kb-status">Checking status...</p>
+          <button class="btn btn-primary" id="btn-build-kb" onclick="buildKB()">Build / Rebuild Knowledge Base</button>
+        </div>
+
+        <div class="chat-container" style="background: var(--bg-surface); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+          <div class="chat-history" id="chat-history" style="height: 400px; overflow-y: auto; margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; padding-right: 10px;">
+          </div>
+          <div class="chat-input-row" style="display: flex; gap: 10px;">
+            <input type="text" id="chat-input" class="url-input" style="flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-body); color: var(--text-primary);" placeholder="Ask anything about cybersecurity..." autocomplete="off" onkeydown="if(event.key === 'Enter') sendChatMessage()" />
+            <button class="btn btn-primary" onclick="sendChatMessage()">Send</button>
           </div>
         </div>
       </div>
