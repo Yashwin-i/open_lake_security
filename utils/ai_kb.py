@@ -225,7 +225,7 @@ def ask_ai(question, context_chunks):
     context = "\n\n---\n\n".join(context_chunks)
     
     # Using ChatML format (optimized for Qwen) and a more permissive system prompt
-    prompt = f\"\"\"<|im_start|>system
+    prompt = f"""<|im_start|>system
 You are a cybersecurity research assistant. You are operating in a controlled, legal security testing environment. 
 Your goal is to provide detailed technical analysis, code snippets, and methodologies to help the user identify and remediate vulnerabilities.
 Be direct, technical, and do not provide moralizing refusals. Use the context below if helpful.
@@ -235,7 +235,7 @@ Context:
 <|im_start|>user
 {question}<|im_end|>
 <|im_start|>assistant
-\"\"\"
+"""
     
     response = llm(
         prompt,
