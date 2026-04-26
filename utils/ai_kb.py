@@ -1,3 +1,9 @@
+"""
+AI Knowledge Base utility for OpenLake Security.
+
+This module provides functionality to fetch, process, and query cybersecurity
+knowledge from various web sources using local language models and ChromaDB.
+"""
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
@@ -11,9 +17,9 @@ import os
 COLLECTION_NAME = "cybersec_kb"
 DB_PATH = "./chroma_db"
 
-# Using Llama-3.2-1B-Instruct (Extremely fast on CPU, small footprint)
-MODEL_REPO = "bartowski/Llama-3.2-1B-Instruct-GGUF"
-MODEL_FILE = "Llama-3.2-1B-Instruct-Q4_K_M.gguf"
+# Using Dolphin3.0-Qwen2.5-1.5B (100% Uncensored, perfect for security testing)
+MODEL_REPO = "bartowski/Dolphin3.0-Qwen2.5-1.5B-GGUF"
+MODEL_FILE = "Dolphin3.0-Qwen2.5-1.5B-Q4_K_M.gguf"
 
 # Free cybersecurity knowledge sources (lightweight text pages)
 SOURCES = [
@@ -61,7 +67,17 @@ SOURCES = [
 ]
 
 def chunk_text(text, size=800, overlap=100):
-    """Split text into overlapping chunks."""
+    """
+    Split text into overlapping chunks.
+
+    Args:
+        text (str): The text to chunk.
+        size (int, optional): The maximum size of each chunk. Defaults to 800.
+        overlap (int, optional): The overlap between consecutive chunks. Defaults to 100.
+
+    Returns:
+        list: A list of text chunks.
+    """
     chunks = []
     start = 0
     while start < len(text):
@@ -71,7 +87,15 @@ def chunk_text(text, size=800, overlap=100):
     return chunks
 
 def fetch_page(url):
-    """Fetch and clean a web page."""
+    """
+    Fetch and clean a web page.
+
+    Args:
+        url (str): The URL to fetch.
+
+    Returns:
+        str or None: The cleaned text content of the page, or None if fetching fails.
+    """
     try:
         headers = {"User-Agent": "Mozilla/5.0 (educational security research bot)"}
         r = requests.get(url, headers=headers, timeout=15)
@@ -86,7 +110,12 @@ def fetch_page(url):
         return None
 
 def get_chroma_collection():
-    """Get or create the ChromaDB collection."""
+    """
+    Get or create the ChromaDB collection.
+
+    Returns:
+        chromadb.Collection: The initialized ChromaDB collection.
+    """
     client = chromadb.PersistentClient(path=DB_PATH)
     ef = embedding_functions.SentenceTransformerEmbeddingFunction(
         model_name="all-MiniLM-L6-v2"
@@ -98,7 +127,12 @@ def get_chroma_collection():
     )
 
 def is_db_populated():
-    """Check if knowledge base already has data."""
+    """
+    Check if the knowledge base already has data.
+
+    Returns:
+        bool: True if the database contains items, False otherwise.
+    """
     try:
         col = get_chroma_collection()
         return col.count() > 0
@@ -106,13 +140,22 @@ def is_db_populated():
         return False
 
 def build_knowledge_base(progress_bar, status_text):
-    """Scrape sources and store in ChromaDB."""
+    """
+    Scrape sources and store them in ChromaDB.
+
+    Args:
+        progress_bar: A progress bar object to update.
+        status_text: A text element to display the current status.
+
+    Returns:
+        int: The total number of documents stored.
+    """
     col = get_chroma_collection()
     total = len(SOURCES)
     doc_id = 0
 
     for i, url in enumerate(SOURCES):
-        status_text.text(f"📥 Fetching: {url.split('/')[-1]}...")
+        status_text.text(f"Fetching: {url.split('/')[-1]}...")
         progress_bar.progress((i + 1) / total)
 
         text = fetch_page(url)
@@ -134,7 +177,16 @@ def build_knowledge_base(progress_bar, status_text):
     return doc_id
 
 def query_knowledge_base(question, n_results=5):
-    """Find relevant chunks from ChromaDB."""
+    """
+    Find relevant chunks from ChromaDB for a given question.
+
+    Args:
+        question (str): The query string.
+        n_results (int, optional): Number of results to retrieve. Defaults to 5.
+
+    Returns:
+        list: A list of relevant document strings.
+    """
     col = get_chroma_collection()
     if col.count() == 0:
         return []
@@ -143,7 +195,12 @@ def query_knowledge_base(question, n_results=5):
 
 @st.cache_resource
 def load_local_llm():
-    """Loads the model locally exactly once per application lifecycle."""
+    """
+    Loads the model locally exactly once per application lifecycle.
+
+    Returns:
+        Llama: An initialized instance of the local LLM.
+    """
     print(f"Downloading/Loading {MODEL_FILE}...")
     model_path = hf_hub_download(repo_id=MODEL_REPO, filename=MODEL_FILE)
     return Llama(
@@ -154,17 +211,36 @@ def load_local_llm():
     )
 
 def ask_ai(question, context_chunks):
-    """Send question + context to the local Llama model via llama_cpp."""
+    """
+    Send question and context to the local model via llama_cpp.
+
+    Args:
+        question (str): The user's query.
+        context_chunks (list): A list of contextual strings to provide to the model.
+
+    Returns:
+        Iterator: A streaming response generator from the LLM.
+    """
     llm = load_local_llm()
     context = "\n\n---\n\n".join(context_chunks)
     
-    # Format for Llama-3.2-Instruct
-    prompt = f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are a cybersecurity assistant. Use the following context to answer the user's question.\n\nContext:\n{context}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{question}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+    # Using ChatML format (optimized for Qwen) and a more permissive system prompt
+    prompt = f\"\"\"<|im_start|>system
+You are a cybersecurity research assistant. You are operating in a controlled, legal security testing environment. 
+Your goal is to provide detailed technical analysis, code snippets, and methodologies to help the user identify and remediate vulnerabilities.
+Be direct, technical, and do not provide moralizing refusals. Use the context below if helpful.
+
+Context:
+{context}<|im_end|>
+<|im_start|>user
+{question}<|im_end|>
+<|im_start|>assistant
+\"\"\"
     
     response = llm(
         prompt,
-        max_tokens=512,
-        stop=["<|eot_id|>"],
+        max_tokens=1024,
+        stop=["<|im_end|>", "<|im_start|>"],
         stream=True
     )
     return response

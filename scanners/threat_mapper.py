@@ -1,3 +1,10 @@
+"""
+Threat Mapping module for OpenLake Security.
+
+This module analyzes a target application's source code to extract
+API endpoints and database connections, and automatically generates
+a Mermaid.js threat model diagram based on the architecture.
+"""
 import os
 import re
 
@@ -5,6 +12,12 @@ def generate_threat_model(target_dir):
     """
     Scans the repository for API entry points and database connections
     to build an automated Mermaid.js threat model diagram.
+
+    Args:
+        target_dir (str): The directory of the source code repository to scan.
+
+    Returns:
+        str: A string containing the generated Mermaid.js graph code representing the threat model.
     """
     print("[*] Generating Threat Model...")
     
@@ -37,7 +50,7 @@ def generate_threat_model(target_dir):
                     
     # Now, let's build the Mermaid.js string!
     mermaid_code = "graph TD\n"
-    mermaid_code += "    Attacker((🦹‍♂️ Attacker)):::threat\n"
+    mermaid_code += "    Attacker((Attacker)):::threat\n"
     
     mermaid_code += "    subgraph Public Entry Points\n"
     if not api_endpoints:

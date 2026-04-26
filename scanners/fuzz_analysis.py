@@ -1,11 +1,23 @@
+"""
+Dynamic Fuzzing Analysis module for OpenLake Security.
+
+This module automates the process of containerizing a target application
+and running various dynamic tests, such as SQL Injection and buffer overflow,
+to identify runtime vulnerabilities.
+"""
 import docker
 import time
 import os
-import json
 import socket
 import requests
 
 def get_free_port():
+    """
+    Finds and returns an available port on the host machine.
+
+    Returns:
+        int: A free network port number.
+    """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(('', 0))
     port = s.getsockname()[1]
@@ -13,6 +25,18 @@ def get_free_port():
     return port
 
 def run_fuzz_scan(target_dir="target_app"):
+    """
+    Builds a Docker container for the target application and performs
+    automated dynamic security testing (fuzzing).
+
+    Args:
+        target_dir (str, optional): The directory containing the application and Dockerfile. 
+                                    Defaults to "target_app".
+
+    Returns:
+        dict: A dictionary containing the results of the fuzzing scan, 
+              including status, crashes, and specific vulnerability details.
+    """
     print(f"[*] Starting Sandbox Fuzzing on {target_dir}...")
     client = docker.from_env()
     
@@ -154,6 +178,15 @@ def run_fuzz_scan(target_dir="target_app"):
     return results
 
 def extract_fuzz_metrics(fuzz_data):
+    """
+    Extract metrics from the dynamic fuzzing data.
+
+    Args:
+        fuzz_data (dict): The dictionary containing the results of the fuzz scan.
+
+    Returns:
+        dict: A dictionary containing metric counts, specifically 'fuzz_crashes' and 'fuzz_status'.
+    """
     return {
         "fuzz_crashes": fuzz_data.get("crashes", 0),
         "fuzz_status": fuzz_data.get("status", "Unknown")

@@ -1,8 +1,24 @@
+"""
+Code Analysis module for OpenLake Security.
+
+This module provides functions to run Bandit scans on target directories
+to identify security issues in Python code and extract metric summaries.
+"""
 import sys
 import subprocess
 import json
 
 def run_bandit_scan(target_dir):
+    """
+    Run a basic Python code security scan using Bandit.
+
+    Args:
+        target_dir (str): The directory containing Python code to scan.
+
+    Returns:
+        dict: A dictionary containing the Bandit scan results in JSON format.
+              Returns an error dictionary if the scan fails.
+    """
     print("[*] Running Code Security Scan (Bandit)...")
     # sys.executable ensures we use the exact Python environment running this script
     command = [sys.executable, "-m", "bandit", "-r", target_dir, "-f", "json"]
@@ -20,6 +36,16 @@ def run_bandit_scan(target_dir):
         return {"error": str(e)}
 
 def extract_metrics(scan_data):
+    """
+    Extract issue severity metrics from Bandit scan data.
+
+    Args:
+        scan_data (dict): The parsed JSON output from a Bandit scan.
+
+    Returns:
+        dict: A dictionary containing metric counts for high and medium severity issues, 
+              as well as total issues.
+    """
     if "metrics" not in scan_data or "_totals" not in scan_data["metrics"]:
         return {"high_severity": 0, "medium_severity": 0, "total_issues": 0}
         

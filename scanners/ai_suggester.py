@@ -1,4 +1,23 @@
+"""
+AI Suggester module for OpenLake Security.
+
+This module is responsible for aggregating vulnerability data from various
+scanners (Bandit, Semgrep, Fuzzing) and generating actionable security
+remediation suggestions.
+"""
 def generate_suggestions(bandit_data, semgrep_data, fuzz_data=None):
+    """
+    Generates a list of remediation suggestions based on security scan results.
+
+    Args:
+        bandit_data (dict): The JSON output from a Bandit scan.
+        semgrep_data (dict): The JSON output from a Semgrep scan.
+        fuzz_data (dict, optional): The dictionary containing dynamic fuzzing results. Defaults to None.
+
+    Returns:
+        list: A list of dictionaries containing detailed suggestions, including
+              file, line number, severity, issue description, and an action plan.
+    """
     print("[*] Generating Security Suggestions...")
     suggestions = []
     
